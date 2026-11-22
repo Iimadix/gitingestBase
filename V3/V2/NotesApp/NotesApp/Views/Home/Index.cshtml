@@ -1,0 +1,182 @@
+﻿@{
+    ViewData["Title"] = "КНИГА САМОПОЗНАНИЯ";
+}
+<link href="~/lib/quill/quill.snow.css" rel="stylesheet" />
+
+<div class="container mt-4 position-relative">
+
+    <!--Секция отображения ЗАМЕТОЧЕК-->
+    <div id="notesSection" class="tab-content-section mx-auto" style="max-width:600px">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0" id="notesSectionTitle">ЗАМЕТОЧКИ</h2>
+            <div>
+                <button type="button" class="btn btn-outline-secondary btn-sm me-2" onclick="toggleTrashView()" id="trashBtn">Корзина</button>
+                <button type="button" class="btn btn-primary rounded-circle shadow"
+                        style="width: 50px; height: 50px; font-size: 24px; line-height: 1;"
+                        onclick="openCreateModal()" title="Добавить заметку">
+                    +
+                </button>
+            </div>
+        </div>
+
+        <div id="noteContainer">
+            <div class="text-center text-muted">Загрузка заметок ...</div>
+        </div>
+    </div>
+</div>
+
+<!--Секция отображения ЗАДАЧЕК-->
+<div id="tasksSection" class="tab-content-section d-none mx-auto" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Список задач</h2>
+        <button type="button" class="btn btn-success rounded-circle shadow"
+                style="width: 50px; height: 50px; font-size: 24px; line-height: 1;"
+                onclick="openCreateTaskModal()" title="Добавить задачу">
+            +
+        </button>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+		<div class="card-body">
+			<div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="btn btn-outline-primary btn-sm" onclick="changeMonth(-1)"> Пред.</button>
+                <h4 id="calendarMonthTitle" class="mb-0 fw-bold">Месяц Год</h4>
+                <button class="btn btn-outline-primary btn-sm" onclick="changeMonth(1)"> След.</button>
+            </div>
+
+			<div id="calendarGrid" class="table-responsive"></div>
+
+        </div>
+    </div>
+    <!-- Контейнер вывода списка задач AJAX-ом -->
+    <div id="taskContainer">
+        <div class="text-center text-muted">Загрузка задач ...</div>
+    </div>
+</div>
+
+<!--Модальное окно ЗАМЕТОК-->
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="addNoteModalLabel">ЗАМЭТОЧКА</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="noteId" value="" />
+
+                <div class="mb-3">
+                    <label for="noteTitle" class="form-label fw-bold">Заголовок</label>
+                    <input type="text" id="noteTitle" class="form-control" placeholder="Введите заголовок..." />
+                </div>
+
+                <!-- Поле для тега / категории -->
+                <div class="mb-3">
+                    <label for="noteCategory" class="form-label fw-bold">Тег / Категория</label>
+                    <input type="text" id="noteCategory" class="form-control" placeholder="Например: Учеба, Работа..." />
+                </div>
+
+                <!-- Чекбокс закрепа заметки -->
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="noteIsPinned">
+                    <label class="form-check-label fw-bold" for="noteIsPinned">Закрепить заметку</label>
+                </div>
+
+                <div class="mb-3">
+                    <label for="noteContent" class="form-label fw-bold">Текст заметки</label>
+
+                    <div id="toolbar-container">
+                        <span class="ql-formats">
+                            <button class="ql-bold" title="Жирный"></button>
+                            <button class="ql-italic" title="Курсив"></button>
+                            <button class="ql-underline" title="Подчеркнутый"></button>
+                            <button class="ql-strike" title="Зачеркнутый"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <button class="ql-list" value="bullet" title="Обычный список"></button>
+                            <button class="ql-list" value="check" title="Список с чекбоксами"></button>
+                        </span>
+                        <!-- Кнопка вставки картинки прямо в редактор -->
+                        <span class="ql-formats">
+                            <button class="ql-image" title="Вставить картинку в текст"></button>
+                        </span>
+                        <span class="ql-formats">
+                            <button type="button" id="btn-font-decrease" class="btn p-0 me-1" style="width:28px;height:24px;" title="Уменьшить шрифт">
+                                <small>A-</small>
+                            </button>
+                            <button type="button" id="btn-font-increase" class="btn p-0" style="width:28px;height:24px;" title="Увеличить шрифт">
+                                <b style="font-size:14px;">A+</b>
+                            </button>
+                        </span>
+                    </div>
+
+                    <div id="editor-container" style="height: 200px; font-size: 16px;"></div>
+                </div>
+
+                <!-- Блок для прикрепления дополнительных файлов к заметке -->
+                <div class="mb-3">
+                    <label for="noteAttachments" class="form-label fw-bold">Вложенные файлы (отдельно)</label>
+                    <input type="file" id="noteAttachments" class="form-control mb-2" multiple />
+                    <div id="existingAttachmentsContainer" class="small text-muted"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" onclick="saveNote()" class="btn btn-primary px-4">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!--Модальное окно ЗАДАЧЕК-->
+<div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="addTaskModalLabel">Новая задача</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="taskId" value="" />
+
+                <div class="mb-3">
+                    <label for="taskTitle" class="form-label fw-bold">Название задачи</label>
+                    <input type="text" id="taskTitle" class="form-control" placeholder="Что нужно сделать?..." />
+                </div>
+
+                <div class="mb-3">
+                    <label for="taskDescription" class="form-label fw-bold">Описание / Детали</label>
+                    <textarea id="taskDescription" class="form-control" rows="3" placeholder="Добавьте подробностей..."></textarea>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="taskDueDate" class="form-label fw-bold">Срок выполнения</label>
+                        <input type="datetime-local" id="taskDueDate" class="form-control" />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="taskPriority" class="form-label fw-bold">Приоритет</label>
+                        <select id="taskPriority" class="form-select">
+                            <option value="0">Низкий</option>
+                            <option value="1" selected>Средний</option>
+                            <option value="2">Высокий</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" onclick="saveTask()" class="btn btn-success px-4">Сохранить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Библиотека Quill -->
+    <script src="~/lib/quill/quill.js"></script>
+
+    <!-- Изолированные скрипты логики -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+}
